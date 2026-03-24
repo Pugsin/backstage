@@ -587,6 +587,31 @@ export class NunjucksWorkflowRunner implements WorkflowRunner {
         },
       };
 
+      // Check if resuming from an approval checkpoint
+      const taskState = await task.getTaskState?.();
+      const approvalCheckpoint = (
+        taskState?.state as
+          | { checkpoints?: { approval?: JsonObject } }
+          | undefined
+      )?.checkpoints?.approval as
+        | {
+            status?: string;
+            currentStepIndex?: number;
+            completedStepOutputs?: Record<
+              string,
+              { output: { [name: string]: JsonValue } }
+            >;
+          }
+        | undefined;
+
+      let startFromStep = 0;
+      if (approvalCheckpoint?.status === 'approved_and_resuming') {
+        startFromStep = approvalCheckpoint.currentStepIndex ?? 0;
+        if (approvalCheckpoint.completedStepOutputs) {
+          Object.assign(context.steps, approvalCheckpoint.completedStepOutputs);
+        }
+      }
+
       const [decision]: PolicyDecision[] =
         this.options.permissions && task.spec.steps.length
           ? await this.options.permissions.authorizeConditional(
@@ -595,7 +620,45 @@ export class NunjucksWorkflowRunner implements WorkflowRunner {
             )
           : [{ result: AuthorizeResult.ALLOW }];
 
-      for (const step of task.spec.steps) {
+      for (let stepIndex = 0; stepIndex < task.spec.steps.length; stepIndex++) {
+        const step = task.spec.steps[stepIndex];
+
+        if (stepIndex < startFromStep) {
+          continue;
+        }
+
+        if (step.approval && !task.isDryRun) {
+          const isResuming =
+            approvalCheckpoint?.status === 'approved_and_resuming' &&
+            approvalCheckpoint?.currentStepIndex === stepIndex;
+
+          if (!isResuming) {
+            const completedStepOutputs = { ...context.steps };
+
+            await task.updateCheckpoint?.({
+              key: 'approval',
+              status: 'success',
+              value: {
+                currentStepIndex: stepIndex,
+                completedStepOutputs,
+                stepId: step.id,
+              },
+            });
+
+            await task.serializeWorkspace?.({ path: workspacePath });
+
+            await task.emitLog(
+              `Step '${
+                step.id
+              }' is waiting for approval from: ${step.approval.approvers.join(
+                ', ',
+              )}`,
+            );
+
+            return { output: {}, waitingForApproval: true };
+          }
+        }
+
         await this.executeStep(
           task,
           step,
