@@ -366,6 +366,12 @@ export type SerializedTaskEvent = {
 // @public @deprecated
 export interface TaskBroker {
   // (undocumented)
+  approve?(options: {
+    taskId: string;
+    approvedBy: string;
+    secrets?: TaskSecrets;
+  }): Promise<void>;
+  // (undocumented)
   cancel(taskId: string): Promise<void>;
   // (undocumented)
   claim(): Promise<TaskContext>;
@@ -400,6 +406,12 @@ export interface TaskBroker {
   }>;
   // (undocumented)
   recoverTasks(): Promise<void>;
+  // (undocumented)
+  reject?(options: {
+    taskId: string;
+    rejectedBy: string;
+    reason?: string;
+  }): Promise<void>;
   // (undocumented)
   retry(options: { secrets?: TaskSecrets; taskId: string }): Promise<void>;
   // (undocumented)
@@ -499,7 +511,8 @@ export type TaskStatus =
   | 'failed'
   | 'open'
   | 'processing'
-  | 'skipped';
+  | 'skipped'
+  | 'waiting';
 
 // @public (undocumented)
 export type TemplateAction<
