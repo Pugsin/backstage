@@ -334,4 +334,14 @@ export interface ScaffolderApi {
     },
     options?: ScaffolderRequestOptions,
   ): Promise<{ results: { title?: string; id: string }[] }>;
+
+  approveTask?(
+    taskId: string,
+    options?: ScaffolderRequestOptions,
+  ): Promise<{ status: string }>;
+
+  rejectTask?(
+    taskId: string,
+    options?: ScaffolderRequestOptions & { reason?: string },
+  ): Promise<{ status: string }>;
 }
