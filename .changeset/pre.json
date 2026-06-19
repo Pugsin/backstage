@@ -230,5 +230,13 @@
     "@backstage/plugin-user-settings-backend": "0.4.4",
     "@backstage/plugin-user-settings-common": "0.1.0"
   },
-  "changesets": []
+  "changesets": [
+    "calm-keys-smile",
+    "create-app-1781882138",
+    "free-moose-shop",
+    "neat-docs-wave",
+    "permission-attributes-nfs",
+    "text-area-field",
+    "wide-knives-roll"
+  ]
 }

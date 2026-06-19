@@ -1,5 +1,11 @@
 # @backstage/ui
 
+## 0.16.1-next.0
+
+### Patch Changes
+
+- 066c7ac: Added a new `TextAreaField` component for multi-line text input, following the same conventions as `TextField` with support for a label, secondary label, and description.
+
 ## 0.16.0
 
 ### Minor Changes
